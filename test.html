@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+   <meta charset="UTF-8">
+   <title>新年烟花祝福</title>
+   <style type="text/css">
+      /* 通用样式 */
+      html,
+      body {
+         padding: 0;
+         margin: 0;
+         background:#222;
+         font-family: 'Karla', sans-serif;
+         color: #fff;
+         height: 100%;
+         overflow: hidden;
+      }
+
+      canvas {
+         width: 100%;
+         height: 100%;
+      }
+
+      /* 第二页面容器 */
+      #page2 {
+         width: 100vw;
+         height: 100vh;
+         display: flex;
+         flex-direction: column;
+         align-items: center;
+         justify-content: center;
+         position: absolute;
+         top: 0;
+         left: 0;
+         z-index: 2;
+         display: none;
+         background:linear-gradient(145deg, #44000d, #20001a);;
+      }
+
+      #page2 > div:first-child {
+         font-size: 4rem;
+         font-weight: bold;
+         margin-bottom: 20px;
+         color: #FFD700;
+         text-shadow: 2px 2px 5px rgba(255, 255, 255, 0.5), 0 0 10px #FF4500;
+         text-align: center;
+      }
+
+      .box {
+         width: 60vw;
+         height: 15vh;
+         background: linear-gradient(90deg, #ffdd57, #ff4e50);
+         border-radius: 15px;
+         font-size: 3rem;
+         text-align: center;
+         line-height: 15vh;
+         color: #44000d;
+         box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+         font-weight: bold;
+         transition: background 0.5s ease;
+      }
+
+      input[type="button"] {
+         margin-top: 20px;
+         padding: 15px 30px;
+         background: #ff4e50;
+         color: #fff;
+         border: none;
+         border-radius: 25px;
+         font-size: 1.5rem;
+         font-weight: bold;
+         box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+         cursor: pointer;
+         transition: all 0.3s ease;
+      }
+
+      input[type="button"]:hover {
+         background: #ffdd57;
+         color: #44000d;
+         transform: scale(1.1);
+         box-shadow: 0 12px 20px rgba(0, 0, 0, 0.3);
+      }
+
+      /* 响应式设计 */
+      @media (max-width: 768px) {
+         #page2 > div:first-child {
+            font-size: 3rem;
+         }
+
+         .box {
+            font-size: 2rem;
+            height: auto;
+            line-height: 120px;
+         }
+
+         input[type="button"] {
+            padding: 10px 20px;
+            font-size: 1rem;
+         }
+      }
+   </style>
+</head>
+
+<body>
+   <canvas id="canvas" ></canvas>
+   <div id="page2">
+      <div>新的一年祝您</div>
+      <div class="box">新年祝福</div>
+      <input type="button" value="开始抽取" id="btn" />
+   </div>
+
+   <script type="text/javascript">
+      var ctx = document.querySelector('canvas').getContext('2d');
+      ctx.canvas.width = window.innerWidth;
+      ctx.canvas.height = window.innerHeight;
+
+      var sparks = [];
+      var fireworks = [];
+      var timer; // 定义定时器
+      var duration = 4000; // 烟花持续时间（毫秒）
+
+      // 初始化烟花
+      for (let i = 0; i < 20; i++) {
+         fireworks.push(createFirework(Math.random() * window.innerWidth, Math.random() * window.innerHeight));
+      }
+
+      // 开始渲染
+      render();
+
+      // 渲染函数
+      function render() {
+         ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+         ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+
+         // 更新并绘制烟花
+         fireworks.forEach((firework) => {
+            if (firework.dead) return;
+            firework.move();
+            firework.draw();
+         });
+
+         // 更新并绘制火花
+         sparks.forEach((spark) => {
+            if (spark.dead) return;
+            spark.move();
+            spark.draw();
+         });
+
+         // 添加随机新烟花
+         if (Math.random() < 0.05) {
+            fireworks.push(createFirework());
+         }
+
+         // 继续渲染
+         if (fireworks.length > 0) {
+            timer = requestAnimationFrame(render);
+         }
+      }
+
+      // 创建火花
+      function createSpark(x, y, color) {
+         let dir = Math.random() * (Math.PI * 2); // 随机方向
+         let speed = Math.random() * 3 + 3; // 初始速度
+         let gravity = 0.25; // 重力
+         let dur = speed / 0.1; // 生命周期
+         let dead = false;
+
+         return {
+            move: function () {
+               dur--;
+               if (dur < 0) dead = true;
+
+               // 更新位置
+               x += Math.cos(dir) * speed;
+               y += Math.sin(dir) * speed;
+
+               // 模拟重力效果
+               y += gravity;
+               gravity += 0.05;
+
+               // 减速
+               if (speed > 0) speed -= 0.1;
+            },
+            draw: function () {
+               drawCircle(x, y, 3, color);
+            },
+            get dead() {
+               return dead;
+            }
+         };
+      }
+
+      // 创建烟花
+      function createFirework(x, y) {
+         x = x || Math.random() * ctx.canvas.width; // 初始水平位置随机
+         y = y || ctx.canvas.height; // 初始垂直位置为画布底部
+         let height = Math.random() * ctx.canvas.height / 2; // 随机爆炸高度
+         let dead = false;
+         let color = randomColor();
+
+         return {
+            move: function () {
+               if (y > height) {
+                  y -= 4; // 垂直向上移动，调整速度
+               } else {
+                  this.burst();
+               }
+            },
+            draw: function () {
+               drawCircle(x, y, 2, color); // 绘制烟花点
+            },
+            burst: function () {
+               dead = true;
+               // 爆炸生成火花
+               for (let i = 0; i < 100; i++) {
+                  sparks.push(createSpark(x, y, color));
+               }
+            },
+            get dead() {
+               return dead;
+            }
+         };
+      }
+
+      // 绘制圆形
+      function drawCircle(x, y, radius, color) {
+         ctx.fillStyle = color || '#FFF';
+         ctx.fillRect(x - radius / 2, y - radius / 2, radius, radius);
+      }
+
+      // 随机颜色
+      function randomColor() {
+         return ['#93c47d', '#a4c2f4', '#b4a7d6', '#c27ba0', '#f6b26b', '#ffd966'][Math.floor(Math.random() * 6)];
+      }
+
+
+      setTimeout(() => {
+         cancelAnimationFrame(timer);
+         fireworks = [];
+         sparks = [];
+         let canvas = document.getElementById('canvas');
+         let page2 = document.getElementById('page2');
+         canvas.style.display = 'none';
+         document.body.style.backgroundColor = '#fdf6e3';
+         page2.style.display = 'flex';
+      }, duration);
+
+      var btn = document.getElementById("btn");
+      var box = document.getElementsByClassName("box")[0];
+      btn.onclick = function () {
+         if (this.value === "开始抽取") {
+            function fn() {
+               var arr = [
+                  "蛇年大吉", "万事如意", "心想事成", "幸福安康", "财源广进", "吉祥如意",
+                  "平安喜乐", "事业有成", "阖家欢乐", "步步高升", "龙腾蛇舞", "福星高照",
+                  "生意兴隆", "春风得意", "吉庆有余", "安居乐业", "健康长寿", "喜气洋洋",
+                  "四季平安", "如意顺心", "万事亨通", "风调雨顺", "幸福美满", "财运亨通"
+               ];
+
+               var index = parseInt(Math.random() * arr.length);
+               var n1 = parseInt(Math.random() * 255 + 1);
+               var n2 = parseInt(Math.random() * 255 + 1);
+               var n3 = parseInt(Math.random() * 255 + 1);
+               box.style.background = "rgb(" + n1 + "," + n2 + "," + n3 + ")";
+               box.innerHTML = arr[index];
+            }
+
+            this.value = "停止抽取";
+            timer = setInterval(fn, 100);
+         } else {
+            clearInterval(timer);
+            this.value = "开始抽取";
+         }
+      };
+   </script>
+</body>
+
+</html>
+
+
+
+
+
+
+
+
+
+
