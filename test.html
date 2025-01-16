@@ -10,7 +10,7 @@
       body {
          padding: 0;
          margin: 0;
-         background:#222;
+         background: #222;
          font-family: 'Karla', sans-serif;
          color: #fff;
          height: 100%;
@@ -35,10 +35,11 @@
          left: 0;
          z-index: 2;
          display: none;
-         background:linear-gradient(145deg, #44000d, #20001a);;
+         background: linear-gradient(145deg, #44000d, #20001a);
+         ;
       }
 
-      #page2 > div:first-child {
+      #page2>div:first-child {
          font-size: 4rem;
          font-weight: bold;
          margin-bottom: 20px;
@@ -84,7 +85,7 @@
 
       /* 响应式设计 */
       @media (max-width: 768px) {
-         #page2 > div:first-child {
+         #page2>div:first-child {
             font-size: 3rem;
          }
 
@@ -103,9 +104,9 @@
 </head>
 
 <body>
-   <canvas id="canvas" ></canvas>
+   <canvas id="canvas"></canvas>
    <div id="page2">
-      <div>新的一年祝您</div>
+      <div>新的一年</div>
       <div class="box">新年祝福</div>
       <input type="button" value="开始抽取" id="btn" />
    </div>
@@ -120,119 +121,125 @@
       var timer; // 定义定时器
       var duration = 4000; // 烟花持续时间（毫秒）
 
-      // 初始化烟花
+      // 生成随机的烟花
       for (let i = 0; i < 20; i++) {
-         fireworks.push(createFirework(Math.random() * window.innerWidth, Math.random() * window.innerHeight));
+         createFirework(Math.random() * window.innerWidth, Math.random() * window.innerHeight);
       }
 
-      // 开始渲染
-      render();
+      init();
 
-      // 渲染函数
-      function render() {
+      function init() {
+         // canvas的背景色黑色且铺满整个页面
          ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
          ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
-         // 更新并绘制烟花
-         fireworks.forEach((firework) => {
-            if (firework.dead) return;
-            firework.move();
-            firework.draw();
+         fireworks.forEach(firework => {
+            if (firework.IsOver) {
+               return;
+            }
+            // 移动火花
+            fireMove(firework);
+            // 绘制火花
+            fireDraw(firework);
          });
 
          // 更新并绘制火花
          sparks.forEach((spark) => {
             if (spark.dead) return;
-            spark.move();
-            spark.draw();
+            SparkMove(spark);
+            SparkDraw(spark);
          });
 
          // 添加随机新烟花
          if (Math.random() < 0.05) {
-            fireworks.push(createFirework());
+            createFirework();
          }
 
          // 继续渲染
          if (fireworks.length > 0) {
-            timer = requestAnimationFrame(render);
+            timer = requestAnimationFrame(init);
          }
-      }
-
-      // 创建火花
-      function createSpark(x, y, color) {
-         let dir = Math.random() * (Math.PI * 2); // 随机方向
-         let speed = Math.random() * 3 + 3; // 初始速度
-         let gravity = 0.25; // 重力
-         let dur = speed / 0.1; // 生命周期
-         let dead = false;
-
-         return {
-            move: function () {
-               dur--;
-               if (dur < 0) dead = true;
-
-               // 更新位置
-               x += Math.cos(dir) * speed;
-               y += Math.sin(dir) * speed;
-
-               // 模拟重力效果
-               y += gravity;
-               gravity += 0.05;
-
-               // 减速
-               if (speed > 0) speed -= 0.1;
-            },
-            draw: function () {
-               drawCircle(x, y, 3, color);
-            },
-            get dead() {
-               return dead;
-            }
-         };
-      }
-
-      // 创建烟花
-      function createFirework(x, y) {
-         x = x || Math.random() * ctx.canvas.width; // 初始水平位置随机
-         y = y || ctx.canvas.height; // 初始垂直位置为画布底部
-         let height = Math.random() * ctx.canvas.height / 2; // 随机爆炸高度
-         let dead = false;
-         let color = randomColor();
-
-         return {
-            move: function () {
-               if (y > height) {
-                  y -= 4; // 垂直向上移动，调整速度
-               } else {
-                  this.burst();
-               }
-            },
-            draw: function () {
-               drawCircle(x, y, 2, color); // 绘制烟花点
-            },
-            burst: function () {
-               dead = true;
-               // 爆炸生成火花
-               for (let i = 0; i < 100; i++) {
-                  sparks.push(createSpark(x, y, color));
-               }
-            },
-            get dead() {
-               return dead;
-            }
-         };
-      }
-
-      // 绘制圆形
-      function drawCircle(x, y, radius, color) {
-         ctx.fillStyle = color || '#FFF';
-         ctx.fillRect(x - radius / 2, y - radius / 2, radius, radius);
       }
 
       // 随机颜色
       function randomColor() {
          return ['#93c47d', '#a4c2f4', '#b4a7d6', '#c27ba0', '#f6b26b', '#ffd966'][Math.floor(Math.random() * 6)];
       }
+
+      function createFirework(x, y) {
+         let firework = {
+            x: x || Math.random() * ctx.canvas.width,
+            y: y || ctx.canvas.height,
+            IsOver: false,
+            height: Math.random() * ctx.canvas.height / 2 // 随机爆炸高度
+         };
+         fireworks.push(firework);
+      }
+
+      function fireMove(firework) {
+         if (firework.y > firework.height) {
+            firework.y -= 4; // 垂直向上移动，调整速度
+         } else {
+            burst(firework);
+         }
+      }
+
+      function fireDraw(firework) {
+         let color = randomColor();
+         // 绘制烟花
+         let radius = 2;
+         ctx.fillStyle = color;
+         ctx.fillRect(firework.x - radius / 2, firework.y - radius / 2, radius, radius);
+      }
+
+      function burst(firework) {
+         firework.IsOver = true;
+         let color = randomColor();
+         // 爆炸生成火花
+         for (let i = 0; i < 100; i++) {
+            sparks.push(createSpark(firework.x, firework.y, color));
+         }
+      }
+
+      // 创建火花
+      function createSpark(x, y, color) {
+         let spark = {
+            x: x,
+            y: y,
+            color: color,
+            dead: false,
+            dir: Math.random() * (Math.PI * 2), // 随机方向
+            speed: Math.random() * 3 + 3, // 初始速度
+            gravity: 0.25, // 重力
+            dur: Math.random() * 30 + 30 // 生命周期
+         };
+         return spark;
+      }
+
+      // 火花移动
+      function SparkMove(spark) {
+         spark.dur--;
+         if (spark.dur < 0) spark.dead = true;
+
+         // 更新位置
+         spark.x += Math.cos(spark.dir) * spark.speed;
+         spark.y += Math.sin(spark.dir) * spark.speed;
+
+         // 模拟重力效果
+         spark.y += spark.gravity;
+         spark.gravity += 0.05;
+
+         // 减速
+         if (spark.speed > 0) spark.speed -= 0.1;
+      }
+
+      // 火花绘制
+      function SparkDraw(spark) {
+         let radius = 3;
+         ctx.fillStyle = spark.color || '#FFF';
+         ctx.fillRect(spark.x - radius / 2, spark.y - radius / 2, radius, radius);
+      }
+
 
 
       setTimeout(() => {
@@ -252,9 +259,9 @@
          if (this.value === "开始抽取") {
             function fn() {
                var arr = [
-                  "蛇年大吉", "万事如意", "心想事成", "幸福安康", "财源广进", "吉祥如意",
-                  "平安喜乐", "事业有成", "阖家欢乐", "步步高升", "龙腾蛇舞", "福星高照",
-                  "生意兴隆", "春风得意", "吉庆有余", "安居乐业", "健康长寿", "喜气洋洋",
+                  "新年大吉", "万事如意", "心想事成", "幸福安康", "财源广进", "吉祥如意",
+                  "平安喜乐", "事业有成", "阖家欢乐", "步步高升", "龙马精神", "福星高照",
+                  "事业腾飞", "春风得意", "吉庆有余", "安居乐业", "健康长寿", "喜气洋洋",
                   "四季平安", "如意顺心", "万事亨通", "风调雨顺", "幸福美满", "财运亨通"
                ];
 
@@ -277,13 +284,3 @@
 </body>
 
 </html>
-
-
-
-
-
-
-
-
-
-
